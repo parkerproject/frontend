@@ -47,7 +47,6 @@
     "projects/common/modules/charts/table-doughnut.js"
   ],
   "sndrs": [
-    "lib/detect.js",
     "bootstraps/enhanced/accessibility.js",
     "bootstraps/enhanced/article-liveblog-common.js",
     "bootstraps/enhanced/article-minute.js",
@@ -85,7 +84,6 @@
   "Calum Campbell": [
     "lib/clamp.js",
     "lib/client-rects.js",
-    "lib/detect.js",
     "lib/element-inview.js",
     "lib/page.js",
     "lib/picturefill.js",
