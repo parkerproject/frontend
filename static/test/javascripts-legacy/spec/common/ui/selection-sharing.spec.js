@@ -29,8 +29,7 @@ define([
                     }
                 },
                 'lib/detect':  {
-                    hasTouchScreen:      function () { return false; },
-                    hasPushStateSupport: function () { return true; }
+                    hasTouchScreen:      function () { return false; }
                 },
                 'common/views/svgs': {
                     inlineSvg: function() {

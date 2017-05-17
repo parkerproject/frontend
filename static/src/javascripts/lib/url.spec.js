@@ -10,8 +10,8 @@ import {
     replaceQueryString,
 } from './url';
 
-jest.mock('lib/detect', () => ({
-    hasPushStateSupport() {
+jest.mock('lib/detect.supports', () => ({
+    pushState() {
         return true;
     },
 }));
