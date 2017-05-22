@@ -1,10 +1,6 @@
 // @flow
 
-export const hasTouchScreen = (): boolean =>
-    'ontouchstart' in window ||
-    (window.DocumentTouch && document instanceof DocumentTouch);
-
-export const pushState: () => boolean = (() => {
+const hasPushStateSupport: () => boolean = (() => {
     let supportsPushState: boolean;
     return () => {
         if (supportsPushState !== undefined) {
@@ -23,3 +19,5 @@ export const pushState: () => boolean = (() => {
         return supportsPushState;
     };
 })();
+
+export { hasPushStateSupport };
