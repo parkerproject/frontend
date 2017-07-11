@@ -1,64 +1,78 @@
+// @flow
 /*
     Module: detect/detect.js                                                                                                 8
     Description: Used to detect various characteristics of the current browsing environment.
                  layout mode, connection speed, battery level, etc...
 */
-/*global DocumentTouch: true */
+/* global DocumentTouch: true */
 
 import mediator from 'lib/mediator';
 import memoize from 'lodash/functions/memoize';
 import performanceAPI from 'lib/window-performance';
 
-var supportsPushState,
-    getUserAgent,
-    pageVisibility = document.visibilityState ||
+let supportsPushState;
+let getUserAgent;
+
+let pageVisibility =
+    document.visibilityState ||
     document.webkitVisibilityState ||
     document.mozVisibilityState ||
     document.msVisibilityState ||
-    'visible',
-    // Ordered lists of breakpoints
-    // These should match those defined in:
-    //   stylesheets/_vars.scss
-    //   common/app/layout/Breakpoint.scala
-    breakpoints = [{
+    'visible';
+
+const // Ordered lists of breakpoints
+// These should match those defined in:
+//   stylesheets/_vars.scss
+//   common/app/layout/Breakpoint.scala
+breakpoints = [
+    {
         name: 'mobile',
         isTweakpoint: false,
-        width: 0
-    }, {
+        width: 0,
+    },
+    {
         name: 'mobileMedium',
         isTweakpoint: true,
-        width: 375
-    }, {
+        width: 375,
+    },
+    {
         name: 'mobileLandscape',
         isTweakpoint: true,
-        width: 480
-    }, {
+        width: 480,
+    },
+    {
         name: 'phablet',
         isTweakpoint: true,
-        width: 660
-    }, {
+        width: 660,
+    },
+    {
         name: 'tablet',
         isTweakpoint: false,
-        width: 740
-    }, {
+        width: 740,
+    },
+    {
         name: 'desktop',
         isTweakpoint: false,
-        width: 980
-    }, {
+        width: 980,
+    },
+    {
         name: 'leftCol',
         isTweakpoint: true,
-        width: 1140
-    }, {
+        width: 1140,
+    },
+    {
         name: 'wide',
         isTweakpoint: false,
-        width: 1300
-    }],
-    detect;
+        width: 1300,
+    },
+];
 
-var breakpointNames = breakpoints.map(getBreakpointName);
+let detect;
 
-var currentBreakpoint;
-var currentTweakpoint;
+const breakpointNames = breakpoints.map(getBreakpointName);
+
+let currentBreakpoint;
+let currentTweakpoint;
 
 init(window);
 
@@ -72,17 +86,20 @@ function init(win) {
 }
 
 function initMediaQueryListeners(win) {
-    breakpoints
-        .forEach(function(bp, index, bps) {
-            // We create mutually exclusive (min-width) and (max-width) media queries
-            // to facilitate the breakpoint/tweakpoint logic.
-            bp.mql = index < bps.length - 1 ?
-                win.matchMedia('(min-width:' + bp.width + 'px) and (max-width:' + (bps[index + 1].width - 1) + 'px)') :
-                win.matchMedia('(min-width:' + bp.width + 'px)');
-            bp.listener = onMatchingBreakpoint.bind(bp);
-            bp.mql.addListener(bp.listener);
-            bp.listener(bp.mql);
-        });
+    breakpoints.forEach((bp, index, bps) => {
+        // We create mutually exclusive (min-width) and (max-width) media queries
+        // to facilitate the breakpoint/tweakpoint logic.
+        bp.mql =
+            index < bps.length - 1
+                ? win.matchMedia(
+                      `(min-width:${bp.width}px) and (max-width:${bps[index + 1]
+                          .width - 1}px)`
+                  )
+                : win.matchMedia(`(min-width:${bp.width}px)`);
+        bp.listener = onMatchingBreakpoint.bind(bp);
+        bp.mql.addListener(bp.listener);
+        bp.listener(bp.mql);
+    });
 }
 
 function onMatchingBreakpoint(mql) {
@@ -101,8 +118,8 @@ function updateBreakpoint(breakpoint) {
 }
 
 function findBreakpoint(tweakpoint) {
-    var breakpointIndex = breakpointNames.indexOf(tweakpoint);
-    var breakpoint = breakpoints[breakpointIndex];
+    let breakpointIndex = breakpointNames.indexOf(tweakpoint);
+    let breakpoint = breakpoints[breakpointIndex];
     while (breakpointIndex >= 0 && breakpoint.isTweakpoint) {
         breakpointIndex -= 1;
         breakpoint = breakpoints[breakpointIndex];
@@ -114,9 +131,12 @@ function updateBreakpoints() {
     // The implementation for browsers that don't support window.matchMedia is simpler,
     // but relies on (1) the resize event, (2) layout and (3) hidden generated content
     // on a pseudo-element
-    var bodyStyle = window.getComputedStyle(document.body, '::after');
-    var breakpointName = bodyStyle.content.substring(1, bodyStyle.content.length - 1);
-    var breakpointIndex = breakpointNames.indexOf(breakpointName);
+    const bodyStyle = window.getComputedStyle(document.body, '::after');
+    const breakpointName = bodyStyle.content.substring(
+        1,
+        bodyStyle.content.length - 1
+    );
+    const breakpointIndex = breakpointNames.indexOf(breakpointName);
     updateBreakpoint(breakpoints[breakpointIndex]);
 }
 
@@ -130,9 +150,9 @@ function updateBreakpoints() {
  *       hasCrossedTheMagicLines(function(){ do stuff })
  */
 function hasCrossedBreakpoint(includeTweakpoint) {
-    var was = getBreakpoint(includeTweakpoint);
-    return function(callback) {
-        var is = getBreakpoint(includeTweakpoint);
+    let was = getBreakpoint(includeTweakpoint);
+    return callback => {
+        const is = getBreakpoint(includeTweakpoint);
         if (is !== was) {
             callback(is, was);
             was = is;
@@ -142,12 +162,14 @@ function hasCrossedBreakpoint(includeTweakpoint) {
 
 function isReload() {
     if ('navigation' in performanceAPI) {
-        return performanceAPI.navigation.type === performanceAPI.navigation.TYPE_RELOAD;
-    } else {
-        // We have no way of knowing if it was a reload on unsupported browsers.
-        // I figure we could only possibly want to treat it as false in that case.
-        return false;
+        return (
+            performanceAPI.navigation.type ===
+            performanceAPI.navigation.TYPE_RELOAD
+        );
     }
+    // We have no way of knowing if it was a reload on unsupported browsers.
+    // I figure we could only possibly want to treat it as false in that case.
+    return false;
 }
 
 function isIOS() {
@@ -184,7 +206,9 @@ function isGuardianReferral() {
 }
 
 function socialContext() {
-    var override = /socialContext=(facebook|twitter)/.exec(window.location.hash);
+    const override = /socialContext=(facebook|twitter)/.exec(
+        window.location.hash
+    );
 
     if (override !== null) {
         return override[1];
@@ -192,23 +216,25 @@ function socialContext() {
         return 'facebook';
     } else if (isTwitterApp() || isTwitterReferral()) {
         return 'twitter';
-    } else {
-        return null;
     }
+    return null;
 }
 
-getUserAgent = (function() {
-    var ua = navigator.userAgent,
-        tem,
-        M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+getUserAgent = (() => {
+    const ua = navigator.userAgent;
+    let tem;
+    let M =
+        ua.match(
+            /(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i
+        ) || [];
     if (/trident/i.test(M[1])) {
         tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
-        return 'IE ' + (tem[1] || '');
+        return `IE ${tem[1] || ''}`;
     }
     if (M[1] === 'Chrome') {
         tem = ua.match(/\bOPR\/(\d+)/);
         if (tem !== null) {
-            return 'Opera ' + tem[1];
+            return `Opera ${tem[1]}`;
         }
     }
     M = M[2] ? [M[1], M[2]] : [navigator.appName, navigator.appVersion, '-?'];
@@ -218,12 +244,15 @@ getUserAgent = (function() {
     }
     return {
         browser: M[0],
-        version: M[1]
+        version: M[1],
     };
 })();
 
 function hasTouchScreen() {
-    return ('ontouchstart' in window) || window.DocumentTouch && document instanceof DocumentTouch;
+    return (
+        'ontouchstart' in window ||
+        (window.DocumentTouch && document instanceof DocumentTouch)
+    );
 }
 
 function hasPushStateSupport() {
@@ -234,41 +263,51 @@ function hasPushStateSupport() {
         supportsPushState = true;
         // Android stock browser lies about its HistoryAPI support.
         if (window.navigator.userAgent.match(/Android/i)) {
-            supportsPushState = !!window.navigator.userAgent.match(/(Chrome|Firefox)/i);
+            supportsPushState = !!window.navigator.userAgent.match(
+                /(Chrome|Firefox)/i
+            );
         }
     }
     return supportsPushState;
 }
 
 function getVideoFormatSupport() {
-    //https://github.com/Modernizr/Modernizr/blob/master/feature-detects/video.js
-    var elem = document.createElement('video'),
+    // https://github.com/Modernizr/Modernizr/blob/master/feature-detects/video.js
+    const elem = document.createElement('video'),
         types = {};
 
     try {
         if (elem.canPlayType) {
-            types.mp4 = elem.canPlayType('video/mp4; codecs="avc1.42E01E"').replace(/^no$/, '');
-            types.ogg = elem.canPlayType('video/ogg; codecs="theora"').replace(/^no$/, '');
-            types.webm = elem.canPlayType('video/webm; codecs="vp8, vorbis"').replace(/^no$/, '');
+            types.mp4 = elem
+                .canPlayType('video/mp4; codecs="avc1.42E01E"')
+                .replace(/^no$/, '');
+            types.ogg = elem
+                .canPlayType('video/ogg; codecs="theora"')
+                .replace(/^no$/, '');
+            types.webm = elem
+                .canPlayType('video/webm; codecs="vp8, vorbis"')
+                .replace(/^no$/, '');
         }
-    } catch (e) { /**/ }
+    } catch (e) {
+        /**/
+    }
 
     return types;
 }
 
 function getOrientation() {
-    return (window.innerHeight > window.innerWidth) ? 'portrait' : 'landscape';
+    return window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
 }
 
 function getViewport() {
-    var w = window,
+    const w = window,
         d = document,
         e = d.documentElement,
         g = d.getElementsByTagName('body')[0];
 
     return {
         width: w.innerWidth || e.clientWidth || g.clientWidth,
-        height: w.innerHeight || e.clientHeight || g.clientHeight
+        height: w.innerHeight || e.clientHeight || g.clientHeight,
     };
 }
 
@@ -289,19 +328,23 @@ function getBreakpoint(includeTweakpoint) {
  *
  */
 function isBreakpoint(criteria) {
-    var indexMin = criteria.min ? breakpointNames.indexOf(criteria.min) : 0;
-    var indexMax = criteria.max ? breakpointNames.indexOf(criteria.max) : breakpointNames.length - 1;
-    var indexCur = breakpointNames.indexOf(currentTweakpoint || currentBreakpoint);
+    const indexMin = criteria.min ? breakpointNames.indexOf(criteria.min) : 0;
+    const indexMax = criteria.max
+        ? breakpointNames.indexOf(criteria.max)
+        : breakpointNames.length - 1;
+    const indexCur = breakpointNames.indexOf(
+        currentTweakpoint || currentBreakpoint
+    );
     return indexMin <= indexCur && indexCur <= indexMax;
 }
 
 // Page Visibility
 function initPageVisibility() {
     // Taken from http://stackoverflow.com/a/1060034
-    var hidden = 'hidden';
+    const hidden = 'hidden';
 
     function onchange(evt) {
-        var v = 'visible',
+        const v = 'visible',
             h = 'hidden',
             evtMap = {
                 focus: v,
@@ -309,7 +352,7 @@ function initPageVisibility() {
                 pageshow: v,
                 blur: h,
                 focusout: h,
-                pagehide: h
+                pagehide: h,
             };
 
         evt = evt || window.event;
@@ -319,21 +362,23 @@ function initPageVisibility() {
             pageVisibility = this[hidden] ? 'hidden' : 'visible';
         }
 
-        mediator.emit('modules:detect:pagevisibility:' + pageVisibility);
+        mediator.emit(`modules:detect:pagevisibility:${pageVisibility}`);
     }
 
     // Standards:
     if (hidden in document) {
         document.addEventListener('visibilitychange', onchange);
-    } else if (('mozHidden') in document) {
+    } else if ('mozHidden' in document) {
         document.addEventListener('mozvisibilitychange', onchange);
-    } else if (('webkitHidden') in document) {
+    } else if ('webkitHidden' in document) {
         document.addEventListener('webkitvisibilitychange', onchange);
-    } else if (('msHidden') in document) {
+    } else if ('msHidden' in document) {
         document.addEventListener('msvisibilitychange', onchange);
-    } else if ('onfocusin' in document) { // IE 9 and lower:
+    } else if ('onfocusin' in document) {
+        // IE 9 and lower:
         document.onfocusin = document.onfocusout = onchange;
-    } else { // All others:
+    } else {
+        // All others:
         window.onpageshow = window.onpagehide = window.onfocus = window.onblur = onchange;
     }
 }
@@ -350,7 +395,7 @@ function isEnhanced() {
     return window.guardian.isEnhanced;
 }
 
-var adblockInUse = new Promise(function(resolve) {
+const adblockInUse = new Promise(resolve => {
     if (window.guardian.adBlockers.hasOwnProperty('active')) {
         // adblock detection has completed
         resolve(window.guardian.adBlockers.active);
@@ -365,32 +410,32 @@ function getReferrer() {
 }
 
 detect = {
-    hasCrossedBreakpoint: hasCrossedBreakpoint,
-    getVideoFormatSupport: getVideoFormatSupport,
-    hasTouchScreen: hasTouchScreen,
-    hasPushStateSupport: hasPushStateSupport,
-    getOrientation: getOrientation,
-    getBreakpoint: getBreakpoint,
-    getViewport: getViewport,
-    getUserAgent: getUserAgent,
-    isIOS: isIOS,
-    isAndroid: isAndroid,
-    isFireFoxOSApp: isFireFoxOSApp,
-    isFacebookApp: isFacebookApp,
-    isTwitterApp: isTwitterApp,
-    isFacebookReferral: isFacebookReferral,
-    isTwitterReferral: isTwitterReferral,
-    isGuardianReferral: isGuardianReferral,
-    socialContext: socialContext,
-    isBreakpoint: isBreakpoint,
-    isReload: isReload,
-    initPageVisibility: initPageVisibility,
-    pageVisible: pageVisible,
-    hasWebSocket: hasWebSocket,
-    breakpoints: breakpoints,
-    isEnhanced: isEnhanced,
-    adblockInUse: adblockInUse,
-    getReferrer: getReferrer,
-    init: init
+    hasCrossedBreakpoint,
+    getVideoFormatSupport,
+    hasTouchScreen,
+    hasPushStateSupport,
+    getOrientation,
+    getBreakpoint,
+    getViewport,
+    getUserAgent,
+    isIOS,
+    isAndroid,
+    isFireFoxOSApp,
+    isFacebookApp,
+    isTwitterApp,
+    isFacebookReferral,
+    isTwitterReferral,
+    isGuardianReferral,
+    socialContext,
+    isBreakpoint,
+    isReload,
+    initPageVisibility,
+    pageVisible,
+    hasWebSocket,
+    breakpoints,
+    isEnhanced,
+    adblockInUse,
+    getReferrer,
+    init,
 };
 export default detect;
