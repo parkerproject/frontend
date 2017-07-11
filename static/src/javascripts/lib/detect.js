@@ -7,7 +7,6 @@
 /* global DocumentTouch: true */
 
 import mediator from 'lib/mediator';
-import memoize from 'lodash/functions/memoize';
 import performanceAPI from 'lib/window-performance';
 
 let supportsPushState;
@@ -67,25 +66,42 @@ breakpoints = [
     },
 ];
 
-let detect;
-
-const breakpointNames = breakpoints.map(getBreakpointName);
-
 let currentBreakpoint;
 let currentTweakpoint;
 
-init(window);
+const getBreakpointName = breakpoint => breakpoint.name;
 
-function init(win) {
-    if ('matchMedia' in win) {
-        initMediaQueryListeners(win);
-    } else {
-        updateBreakpoints.call(win);
-        mediator.on('window:throttledResize', updateBreakpoints);
+const getBreakpoint = includeTweakpoint =>
+    includeTweakpoint ? currentTweakpoint : currentBreakpoint;
+
+const breakpointNames = breakpoints.map(getBreakpointName);
+
+const findBreakpoint = tweakpoint => {
+    let breakpointIndex = breakpointNames.indexOf(tweakpoint);
+    let breakpoint = breakpoints[breakpointIndex];
+    while (breakpointIndex >= 0 && breakpoint.isTweakpoint) {
+        breakpointIndex -= 1;
+        breakpoint = breakpoints[breakpointIndex];
     }
-}
+    return breakpoint.name;
+};
 
-function initMediaQueryListeners(win) {
+const updateBreakpoint = breakpoint => {
+    if (breakpoint.isTweakpoint) {
+        currentTweakpoint = breakpoint.name;
+        currentBreakpoint = findBreakpoint(currentTweakpoint);
+    } else {
+        currentBreakpoint = currentTweakpoint = breakpoint.name;
+    }
+};
+
+const onMatchingBreakpoint = mql => {
+    if (mql.matches) {
+        updateBreakpoint(this);
+    }
+};
+
+const initMediaQueryListeners = win => {
     breakpoints.forEach((bp, index, bps) => {
         // We create mutually exclusive (min-width) and (max-width) media queries
         // to facilitate the breakpoint/tweakpoint logic.
@@ -100,34 +116,9 @@ function initMediaQueryListeners(win) {
         bp.mql.addListener(bp.listener);
         bp.listener(bp.mql);
     });
-}
+};
 
-function onMatchingBreakpoint(mql) {
-    if (mql.matches) {
-        updateBreakpoint(this);
-    }
-}
-
-function updateBreakpoint(breakpoint) {
-    if (breakpoint.isTweakpoint) {
-        currentTweakpoint = breakpoint.name;
-        currentBreakpoint = findBreakpoint(currentTweakpoint);
-    } else {
-        currentBreakpoint = currentTweakpoint = breakpoint.name;
-    }
-}
-
-function findBreakpoint(tweakpoint) {
-    let breakpointIndex = breakpointNames.indexOf(tweakpoint);
-    let breakpoint = breakpoints[breakpointIndex];
-    while (breakpointIndex >= 0 && breakpoint.isTweakpoint) {
-        breakpointIndex -= 1;
-        breakpoint = breakpoints[breakpointIndex];
-    }
-    return breakpoint.name;
-}
-
-function updateBreakpoints() {
+const updateBreakpoints = () => {
     // The implementation for browsers that don't support window.matchMedia is simpler,
     // but relies on (1) the resize event, (2) layout and (3) hidden generated content
     // on a pseudo-element
@@ -138,7 +129,18 @@ function updateBreakpoints() {
     );
     const breakpointIndex = breakpointNames.indexOf(breakpointName);
     updateBreakpoint(breakpoints[breakpointIndex]);
-}
+};
+
+const init = win => {
+    if ('matchMedia' in win) {
+        initMediaQueryListeners(win);
+    } else {
+        updateBreakpoints.call(win);
+        mediator.on('window:throttledResize', updateBreakpoints);
+    }
+};
+
+init(window);
 
 /**
  *     Util: returns a function that:
@@ -149,7 +151,7 @@ function updateBreakpoints() {
  *     then:
  *       hasCrossedTheMagicLines(function(){ do stuff })
  */
-function hasCrossedBreakpoint(includeTweakpoint) {
+const hasCrossedBreakpoint = includeTweakpoint => {
     let was = getBreakpoint(includeTweakpoint);
     return callback => {
         const is = getBreakpoint(includeTweakpoint);
@@ -158,9 +160,9 @@ function hasCrossedBreakpoint(includeTweakpoint) {
             was = is;
         }
     };
-}
+};
 
-function isReload() {
+const isReload = () => {
     if ('navigation' in performanceAPI) {
         return (
             performanceAPI.navigation.type ===
@@ -170,42 +172,27 @@ function isReload() {
     // We have no way of knowing if it was a reload on unsupported browsers.
     // I figure we could only possibly want to treat it as false in that case.
     return false;
-}
+};
 
-function isIOS() {
-    return /(iPad|iPhone|iPod touch)/i.test(navigator.userAgent);
-}
+const isIOS = () => /(iPad|iPhone|iPod touch)/i.test(navigator.userAgent);
 
-function isAndroid() {
-    return /Android/i.test(navigator.userAgent);
-}
+const isAndroid = () => /Android/i.test(navigator.userAgent);
 
-function isFireFoxOSApp() {
-    return navigator.mozApps && !window.locationbar.visible;
-}
+const isFireFoxOSApp = () => navigator.mozApps && !window.locationbar.visible;
 
-function isFacebookApp() {
-    return navigator.userAgent.indexOf('FBAN/') > -1;
-}
+const isFacebookApp = () => navigator.userAgent.indexOf('FBAN/') > -1;
 
-function isTwitterApp() {
+const isTwitterApp = () =>
     // NB Android app is indistinguishable from Chrome: http://mobiforge.com/research-analysis/webviews-and-user-agent-strings
-    return navigator.userAgent.indexOf('Twitter for iPhone') > -1;
-}
+    navigator.userAgent.indexOf('Twitter for iPhone') > -1;
 
-function isTwitterReferral() {
-    return /\.t\.co/.test(document.referrer);
-}
+const isTwitterReferral = () => /\.t\.co/.test(document.referrer);
 
-function isFacebookReferral() {
-    return /\.facebook\.com/.test(document.referrer);
-}
+const isFacebookReferral = () => /\.facebook\.com/.test(document.referrer);
 
-function isGuardianReferral() {
-    return /\.theguardian\.com/.test(document.referrer);
-}
+const isGuardianReferral = () => /\.theguardian\.com/.test(document.referrer);
 
-function socialContext() {
+const socialContext = () => {
     const override = /socialContext=(facebook|twitter)/.exec(
         window.location.hash
     );
@@ -218,9 +205,9 @@ function socialContext() {
         return 'twitter';
     }
     return null;
-}
+};
 
-getUserAgent = (() => {
+const getUserAgent = (() => {
     const ua = navigator.userAgent;
     let tem;
     let M =
@@ -248,14 +235,11 @@ getUserAgent = (() => {
     };
 })();
 
-function hasTouchScreen() {
-    return (
-        'ontouchstart' in window ||
-        (window.DocumentTouch && document instanceof DocumentTouch)
-    );
-}
+const hasTouchScreen = () =>
+    'ontouchstart' in window ||
+    (window.DocumentTouch && document instanceof DocumentTouch);
 
-function hasPushStateSupport() {
+const hasPushStateSupport = () => {
     if (supportsPushState !== undefined) {
         return supportsPushState;
     }
@@ -269,9 +253,9 @@ function hasPushStateSupport() {
         }
     }
     return supportsPushState;
-}
+};
 
-function getVideoFormatSupport() {
+const getVideoFormatSupport = () => {
     // https://github.com/Modernizr/Modernizr/blob/master/feature-detects/video.js
     const elem = document.createElement('video'),
         types = {};
@@ -293,13 +277,12 @@ function getVideoFormatSupport() {
     }
 
     return types;
-}
+};
 
-function getOrientation() {
-    return window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
-}
+const getOrientation = () =>
+    window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
 
-function getViewport() {
+const getViewport = () => {
     const w = window,
         d = document,
         e = d.documentElement,
@@ -309,15 +292,7 @@ function getViewport() {
         width: w.innerWidth || e.clientWidth || g.clientWidth,
         height: w.innerHeight || e.clientHeight || g.clientHeight,
     };
-}
-
-function getBreakpointName(breakpoint) {
-    return breakpoint.name;
-}
-
-function getBreakpoint(includeTweakpoint) {
-    return includeTweakpoint ? currentTweakpoint : currentBreakpoint;
-}
+};
 
 /**
  *     Usage:
@@ -327,7 +302,7 @@ function getBreakpoint(includeTweakpoint) {
  *
  *
  */
-function isBreakpoint(criteria) {
+const isBreakpoint = criteria => {
     const indexMin = criteria.min ? breakpointNames.indexOf(criteria.min) : 0;
     const indexMax = criteria.max
         ? breakpointNames.indexOf(criteria.max)
@@ -336,10 +311,10 @@ function isBreakpoint(criteria) {
         currentTweakpoint || currentBreakpoint
     );
     return indexMin <= indexCur && indexCur <= indexMax;
-}
+};
 
 // Page Visibility
-function initPageVisibility() {
+const initPageVisibility = () => {
     // Taken from http://stackoverflow.com/a/1060034
     const hidden = 'hidden';
 
@@ -381,19 +356,13 @@ function initPageVisibility() {
         // All others:
         window.onpageshow = window.onpagehide = window.onfocus = window.onblur = onchange;
     }
-}
+};
 
-function pageVisible() {
-    return pageVisibility === 'visible';
-}
+const pageVisible = () => pageVisibility === 'visible';
 
-function hasWebSocket() {
-    return 'WebSocket' in window;
-}
+const hasWebSocket = () => 'WebSocket' in window;
 
-function isEnhanced() {
-    return window.guardian.isEnhanced;
-}
+const isEnhanced = () => window.guardian.isEnhanced;
 
 const adblockInUse = new Promise(resolve => {
     if (window.guardian.adBlockers.hasOwnProperty('active')) {
@@ -405,11 +374,9 @@ const adblockInUse = new Promise(resolve => {
     }
 });
 
-function getReferrer() {
-    return document.referrer || '';
-}
+const getReferrer = () => document.referrer || '';
 
-detect = {
+export default {
     hasCrossedBreakpoint,
     getVideoFormatSupport,
     hasTouchScreen,
@@ -438,4 +405,3 @@ detect = {
     getReferrer,
     init,
 };
-export default detect;
