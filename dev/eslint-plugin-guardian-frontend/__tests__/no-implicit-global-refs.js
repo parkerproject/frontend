@@ -21,9 +21,9 @@ ruleTester.run('exports-last', rule, {
         'const close = () => {}; close();',
         // 'import close from "lib/close"; close();',
     ],
-
     invalid: [
         'close();',
+        'close(); const close = () => {}; close();',
         // 'const close = close;',
     ].map(code => ({
         code,
