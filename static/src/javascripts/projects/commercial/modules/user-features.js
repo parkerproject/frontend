@@ -28,7 +28,7 @@ const persistResponse = (JsonResponse: () => void) => {
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 1);
     addCookie(USER_FEATURES_EXPIRY_COOKIE, expiryDate.getTime().toString());
-    addCookie(PAYING_MEMBER_COOKIE, !JsonResponse.adblockMessage);
+    addCookie(PAYING_MEMBER_COOKIE, JsonResponse.contentAccess.paidMember);
 
     if (switches.adFreeSubscriptionTrial && JsonResponse.adFree) {
         addCookie(AD_FREE_USER_COOKIE, expiryDate.getTime().toString());
@@ -43,7 +43,7 @@ const deleteOldData = (): void => {
 };
 
 const requestNewData = (): Promise<void> =>
-    fetchJson(`${config.page.userAttributesApiUrl}/me/features`, {
+    fetchJson(`${config.page.userAttributesApiUrl}/me`, {
         mode: 'cors',
         credentials: 'include',
     })
