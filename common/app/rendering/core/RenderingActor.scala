@@ -1,23 +1,21 @@
 package rendering.core
 
+import javax.script.CompiledScript
+
 import akka.actor.Actor
-import model.ApplicationContext
 import rendering.Renderable
+
 import scala.util.Try
 
-case class Rendering(renderable: Renderable, ac: ApplicationContext)
+case class Rendering(renderable: Renderable, maybeCompiledScript: Option[CompiledScript] = None)
 
 case class RenderingException(error: String) extends RuntimeException(error)
 
-class RenderingActor extends Actor with JavascriptRendering {
-
-  override def javascriptFile: String = "ui.bundle.server.js"
+class RenderingActor(javascriptRendering: JavascriptRendering) extends Actor {
 
   override def receive: Receive = {
-    case Rendering(renderable, appContext) =>
-      sender ! render(renderable.props)(appContext)
-    case  _ =>
-      sender ! Try(throw new RenderingException("RenderingActor received an unknown message"))
+    case Rendering(renderable, cs) => sender ! javascriptRendering.render(renderable.props)
+    case  _ => sender ! Try(throw new RenderingException("RenderingActor received an unknown message"))
   }
 
 }

@@ -56,10 +56,11 @@ object Frontend extends Build with Prototypes {
       commercialShared
     )
   ).settings(
-      mappings in TestAssets ~= filterAssets
+    mappings in TestAssets ~= filterAssets,
+    mappings in packageBin += { uiDir / "ui.bundle.server.js" -> "conf/ui.bundle.server.js" }
   )
 
-  private def filterAssets(testAssets: Seq[(File, String)]) = testAssets.filterNot{ case (file, fileName) =>
+  private def filterAssets(testAssets: Seq[(File, String)]): Seq[(File, String)] = testAssets.filterNot{ case (file, fileName) =>
     // built in sbt plugins did not like the bower files
     fileName.endsWith("bower.json")
   }

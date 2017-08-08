@@ -17,6 +17,8 @@ trait Prototypes {
   val cleanAll = taskKey[Unit]("Cleans all projects in a build, regardless of dependencies")
   val checkScalastyle = taskKey[Unit]("check scalastyle compliance")
 
+  val uiDir: File = file("ui/dist")
+
   val frontendCompilationSettings = Seq(
     organization := "com.gu",
     maxErrors := 20,
@@ -37,7 +39,7 @@ trait Prototypes {
       val allProjects = ScopeFilter(inAnyProject)
       clean.all(allProjects)
     }.value,
-    unmanagedResourceDirectories in Compile += file("ui/dist")
+    unmanagedClasspath in Runtime += uiDir
   )
 
   val frontendIntegrationTestsSettings = Seq (

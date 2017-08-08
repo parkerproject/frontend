@@ -16,24 +16,21 @@ import scala.util.{Failure, Success, Try}
 @DoNotDiscover class RenderingActorTest
   extends FlatSpec
   with ConfiguredTestSuite
-  with WithTestContext
   with Matchers
-  with ExceptionMatcher {
+  with ExceptionMatcher
+  with JavascriptCompiler {
 
   lazy val actorSystem: ActorSystem = app.actorSystem
   implicit lazy val timeout = new Timeout(2.seconds)
 
-  class TestRenderingActor extends RenderingActor {
-    override def javascriptFile: String = "components/TestButtonComponent.js"
-  }
-
-  lazy val actor = actorSystem.actorOf(Props(new TestRenderingActor))
+  lazy val compiledScript = compile("components/TestButtonComponent.js").get
+  lazy val actor = actorSystem.actorOf(Props(classOf[RenderingActor], new JavascriptRendering(compiledScript)))
 
   "Sending rendering message" should "return a string" in {
     val component = new Renderable {
       override def props: Option[JsValue] = Some(Json.obj("title" -> "my title"))
     }
-    val f = (actor ? Rendering(component, testContext)).mapTo[Try[String]]
+    val f = (actor ? Rendering(component)).mapTo[Try[String]]
     Await.result(f, timeout.duration) match {
       case Success(s) => s should not be(empty)
       case Failure(e) => fail("A string should have been returned")
