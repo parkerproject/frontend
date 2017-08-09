@@ -202,6 +202,8 @@ object Frontend extends Build with Prototypes {
     preview,
     rss
   ).settings(
+//    mappings in Universal ++= (baseDirectory.value / "ui" / "dist" * "*" get).map(x => x -> ("config/" + x.getName)),
+    mappings in Universal ++= (file("ui/dist") ** "*").get.map { f => f.getAbsoluteFile -> f.toString },
     riffRaffBuildIdentifier := System.getenv().getOrDefault("BUILD_NUMBER", "0").replaceAll("\"",""),
     riffRaffUploadArtifactBucket := Some(System.getenv().getOrDefault("RIFF_RAFF_ARTIFACT_BUCKET", "aws-frontend-teamcity")),
     riffRaffUploadManifestBucket := Some(System.getenv().getOrDefault("RIFF_RAFF_BUILD_BUCKET", "aws-frontend-teamcity")),

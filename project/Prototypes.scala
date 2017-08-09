@@ -37,7 +37,7 @@ trait Prototypes {
       val allProjects = ScopeFilter(inAnyProject)
       clean.all(allProjects)
     }.value,
-    unmanagedResourceDirectories in Compile += file("ui/dist")
+    unmanagedClasspath in Runtime += file("ui/dist")
   )
 
   val frontendIntegrationTestsSettings = Seq (
